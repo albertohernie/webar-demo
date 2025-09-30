@@ -1,112 +1,153 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <title>Lona AR Geolocalizada</title>
-    <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
-    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
-    <style>
-      body {
-        margin: 0;
-        overflow: hidden;
-        font-family: Arial, sans-serif;
-      }
-      #ui {
-        position: fixed;
-        bottom: 10px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: rgba(255, 255, 255, 0.9);
-        padding: 12px;
-        border-radius: 10px;
-        box-shadow: 0px 2px 6px rgba(0,0,0,0.3);
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        z-index: 999;
-        width: 80%;
-        max-width: 400px;
-      }
-      input, button {
-        padding: 8px;
-        border: 1px solid #ccc;
-        border-radius: 6px;
-        font-size: 14px;
-      }
-      button {
-        background: #007BFF;
-        color: white;
-        font-weight: bold;
-        cursor: pointer;
-      }
-      button:hover {
-        background: #0056b3;
-      }
-    </style>
-  </head>
-  <body>
-    <!-- Escena con RA y geolocalización -->
-    <a-scene embedded arjs="sourceType: webcam; gpsMinDistance: 5;">
-      
-      <!-- Contenedor de la lona, geolocalizado -->
-      <a-entity gps-entity-place="latitude: 38.540928; longitude: -0.815620">
-        
-        <!-- Lona como plano -->
-        <a-plane id="foto-lona" width="4" height="3" color="white">
-          <!-- Texto sobre la lona -->
-          <a-text id="texto-lona"
-                  value="¡Tu mensaje aquí!"
-                  position="0 1.2 0.1"
-                  align="center"
-                  color="red"
-                  scale="3 3 3">
-          </a-text>
-        </a-plane>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0" />
+  <title>Lona AR Geolocalizada - prueba</title>
 
-      </a-entity>
-    </a-scene>
+  <!-- A-Frame + AR.js -->
+  <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
+  <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
 
-    <!-- Interfaz de usuario -->
-    <div id="ui">
-      <input id="mensaje" type="text" placeholder="Escribe tu mensaje" />
-      <input id="foto" type="file" accept="image/*" />
+  <!-- plugin de geolocalización para A-Frame -->
+  <script src="https://unpkg.com/aframe-gps-entity-place/dist/aframe-gps-entity-place.min.js"></script>
+
+  <!-- componente look-at para que la lona mire al usuario -->
+  <script src="https://unpkg.com/aframe-look-at-component@0.8.0/dist/aframe-look-at-component.min.js"></script>
+
+  <style>
+    body { margin: 0; font-family: system-ui, Arial; overflow: hidden;}
+    #ui {
+      position: fixed; left: 50%; transform: translateX(-50%);
+      bottom: 10px; z-index: 9999;
+      background: rgba(255,255,255,0.95); padding: 10px; border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2); width: 92%; max-width: 420px;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    input, button { padding: 8px; font-size: 14px; border-radius: 6px; border: 1px solid #ccc; }
+    button { background:#007bff; color: #fff; font-weight:600; cursor:pointer; border:none; }
+    #status { font-size: 12px; color: #333; }
+  </style>
+</head>
+<body>
+  <!-- Escena AR con cámara GPS -->
+  <a-scene embedded vr-mode-ui="enabled: false" arjs="sourceType: webcam; debugUIEnabled: false;">
+    <!-- Cámara que provee la posición GPS -->
+    <a-camera gps-camera rotation-reader></a-camera>
+
+    <!-- Entidad geolocalizada (cambia latitude/longitude por las coordenadas deseadas) -->
+    <a-entity id="lona-entity" gps-entity-place="latitude: 0; longitude: 0">
+      <!-- Lona como imagen (texture) -->
+      <a-image id="foto-lona" src="" width="5" height="3" position="0 1.5 0" look-at="[gps-camera]"></a-image>
+      <!-- Texto hijo que queda sobre la lona -->
+      <a-text id="texto-lona" value="¡Tu mensaje aquí!" align="center" 
+              position="0 0 0.02" 
+              color="#ff0000" 
+              width="4" 
+              look-at="[gps-camera]"
+              ></a-text>
+    </a-entity>
+  </a-scene>
+
+  <!-- Interfaz -->
+  <div id="ui">
+    <div id="status">Estado: esperando ubicación...</div>
+    <input id="mensaje" type="text" placeholder="Escribe tu mensaje" />
+    <input id="foto" type="file" accept="image/*" />
+    <div style="display:flex; gap:8px;">
       <button onclick="actualizar()">Actualizar lona</button>
-      <button onclick="compartir()">Compartir</button>
+      <button onclick="colocarMiUbicacion()">Colocar en mi ubicación (prueba)</button>
+      <button onclick="compartir()">Compartir/Guardar captura</button>
     </div>
+  </div>
 
-    <script>
-      function actualizar() {
-        // Actualizar texto
-        const mensaje = document.getElementById("mensaje").value;
-        if (mensaje) {
-          document.querySelector("#texto-lona").setAttribute("value", mensaje);
-        }
+  <script>
+    // component para leer rotación (solo para debug, opcional)
+    AFRAME.registerComponent('rotation-reader', {
+      tick: function () { /* stubs; no mostramos rotacion para no spam */ }
+    });
 
-        // Actualizar foto
-        const file = document.getElementById("foto").files[0];
-        if (file) {
-          const reader = new FileReader();
-          reader.onload = function(e) {
-            document.querySelector("#foto-lona").setAttribute("src", e.target.result);
-          };
-          reader.readAsDataURL(file);
-        }
+    // Mostrar lat/lon usando geolocation (ayuda a debug)
+    const statusEl = document.getElementById('status');
+    if ('geolocation' in navigator) {
+      navigator.geolocation.watchPosition(pos => {
+        const lat = pos.coords.latitude.toFixed(6);
+        const lon = pos.coords.longitude.toFixed(6);
+        const acc = Math.round(pos.coords.accuracy);
+        statusEl.innerText = `Ubicación: ${lat}, ${lon} (±${acc} m). Asegura permisos de cámara y ubicación.`;
+      }, err => {
+        statusEl.innerText = 'Error geolocalización: ' + err.message;
+      }, { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 });
+    } else {
+      statusEl.innerText = 'Geolocalización no soportada por tu navegador.';
+    }
+
+    // Actualizar mensaje y foto en la lona
+    function actualizar() {
+      const mensaje = document.getElementById('mensaje').value;
+      const file = document.getElementById('foto').files[0];
+
+      if (mensaje) {
+        document.querySelector('#texto-lona').setAttribute('value', mensaje);
       }
 
-      function compartir() {
-        if (navigator.share) {
-          navigator.share({
-            title: "Mi lona RA",
-            text: "¡Mira lo que hice en realidad aumentada! 🌐",
-            url: window.location.href
-          }).catch(err => console.log("Error al compartir:", err));
-        } else {
-          alert("Tu navegador no soporta compartir directamente. Copia el link: " + window.location.href);
-        }
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          // aplicar como textura a la a-image
+          const img = document.querySelector('#foto-lona');
+          img.setAttribute('src', e.target.result);
+        };
+        reader.readAsDataURL(file);
       }
-    </script>
-  </body>
+    }
+
+    // Button de prueba: coloca la lona en tu ubicación actual (útil para pruebas)
+    function colocarMiUbicacion() {
+      if (!('geolocation' in navigator)) { alert('Geolocalización no disponible'); return; }
+      navigator.geolocation.getCurrentPosition(pos => {
+        const lat = pos.coords.latitude;
+        const lon = pos.coords.longitude;
+        const ent = document.getElementById('lona-entity');
+        ent.setAttribute('gps-entity-place', `latitude: ${lat}; longitude: ${lon}`);
+        alert('Lona colocada en tu ubicación actual. Muévete un poco con el móvil hasta que aparezca en la escena.');
+      }, err => {
+        alert('No se pudo obtener ubicación: ' + err.message);
+      }, { enableHighAccuracy: true, timeout: 10000 });
+    }
+
+    // Compartir: intenta tomar la imagen del canvas y compartir (o descargar)
+    function compartir() {
+      const canvas = document.querySelector('canvas');
+      if (!canvas) { alert('Canvas AR no disponible para captura.'); return; }
+
+      canvas.toBlob(async function(blob) {
+        if (!blob) { alert('No se pudo generar imagen.'); return; }
+        const file = new File([blob], 'lona.png', { type: 'image/png' });
+
+        // Si el navegador soporta Web Share con archivos
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          try {
+            await navigator.share({ files: [file], title: 'Mi lona RA', text: 'Mira mi lona RA' });
+            return;
+          } catch (err) {
+            console.log('Error al compartir:', err);
+          }
+        }
+
+        // Fallback: descarga la imagen
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = 'lona.png';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      }, 'image/png');
+    }
+
+    // Consejo: cuando hagas pruebas, espera unos segundos tras dar permisos,
+    // y prueba al aire libre (GPS necesita señal).
+  </script>
+</body>
 </html>
-
-
-
