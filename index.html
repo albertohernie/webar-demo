@@ -1,17 +1,100 @@
+<!DOCTYPE html>
 <html>
   <head>
+    <meta charset="utf-8">
+    <title>Lona AR Interactiva</title>
     <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+        font-family: Arial, sans-serif;
+      }
+      #ui {
+        position: fixed;
+        bottom: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(255, 255, 255, 0.9);
+        padding: 12px;
+        border-radius: 10px;
+        box-shadow: 0px 2px 6px rgba(0,0,0,0.3);
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        z-index: 999;
+        width: 80%;
+        max-width: 400px;
+      }
+      input, button {
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        font-size: 14px;
+      }
+      button {
+        background: #007BFF;
+        color: white;
+        font-weight: bold;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #0056b3;
+      }
+    </style>
   </head>
-  <body style="margin: 0; overflow: hidden;">
+  <body>
+    <!-- Escena RA -->
     <a-scene embedded arjs>
-      <!-- Mensaje flotante -->
-      <a-text 
-        value="¡Bienvenido a mi ciudad!" 
-        position="0 1 -3" 
-        color="red" 
-        scale="5 5 5">
+      <!-- Texto de la lona -->
+      <a-text id="texto-lona" value="¡Tu mensaje aquí!" 
+              position="0 1 -3" color="red" scale="5 5 5">
       </a-text>
+      
+      <!-- Foto en la lona -->
+      <a-plane id="foto-lona" position="0 2 -3" width="2" height="2" color="white">
+      </a-plane>
     </a-scene>
+
+    <!-- Interfaz de usuario -->
+    <div id="ui">
+      <input id="mensaje" type="text" placeholder="Escribe tu mensaje" />
+      <input id="foto" type="file" accept="image/*" />
+      <button onclick="actualizar()">Actualizar lona</button>
+      <button onclick="compartir()">Compartir</button>
+    </div>
+
+    <script>
+      function actualizar() {
+        // Actualizar texto
+        const mensaje = document.getElementById("mensaje").value;
+        if (mensaje) {
+          document.querySelector("#texto-lona").setAttribute("value", mensaje);
+        }
+
+        // Actualizar foto
+        const file = document.getElementById("foto").files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            document.querySelector("#foto-lona").setAttribute("src", e.target.result);
+          };
+          reader.readAsDataURL(file);
+        }
+      }
+
+      function compartir() {
+        if (navigator.share) {
+          navigator.share({
+            title: "Mi lona RA",
+            text: "¡Mira lo que hice en realidad aumentada! 🌐",
+            url: window.location.href
+          }).catch(err => console.log("Error al compartir:", err));
+        } else {
+          alert("Tu navegador no soporta compartir directamente. Copia el link: " + window.location.href);
+        }
+      }
+    </script>
   </body>
 </html>
