@@ -2,9 +2,9 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>Lona AR Interactiva</title>
+    <title>Lona AR Geolocalizada</title>
     <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
-    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
     <style>
       body {
         margin: 0;
@@ -45,16 +45,25 @@
     </style>
   </head>
   <body>
-    <!-- Escena RA -->
-    <a-scene embedded arjs>
-      <!-- Texto de la lona -->
-      <a-text id="texto-lona" value="¡Tu mensaje aquí!" 
-              position="0 1 -3" color="red" scale="5 5 5">
-      </a-text>
+    <!-- Escena con RA y geolocalización -->
+    <a-scene embedded arjs="sourceType: webcam; gpsMinDistance: 5;">
       
-      <!-- Foto en la lona -->
-      <a-plane id="foto-lona" position="0 2 -3" width="2" height="2" color="white">
-      </a-plane>
+      <!-- Contenedor de la lona, geolocalizado -->
+      <a-entity gps-entity-place="latitude: 40.4168; longitude: -3.7038">
+        
+        <!-- Lona como plano -->
+        <a-plane id="foto-lona" width="4" height="3" color="white">
+          <!-- Texto sobre la lona -->
+          <a-text id="texto-lona"
+                  value="¡Tu mensaje aquí!"
+                  position="0 1.2 0.1"
+                  align="center"
+                  color="red"
+                  scale="3 3 3">
+          </a-text>
+        </a-plane>
+
+      </a-entity>
     </a-scene>
 
     <!-- Interfaz de usuario -->
